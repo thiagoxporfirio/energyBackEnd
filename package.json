@@ -1,0 +1,53 @@
+{
+	"name": "api",
+	"version": "1.0.0",
+	"main": "index.js",
+	"repository": "",
+	"author": "thiagoxporfirio <thiagovporfirio@gmail.com>",
+	"license": "MIT",
+	"scripts": {
+		"build": "tsc",
+		"dev": " nodemon src/server.ts --max-old-space-size=4000 env=dev ",
+		"typeorm": "ts-node-dev ./node_modules/typeorm/cli.js",
+		"format": "prettier --write .",
+		"lint": "eslint .",
+		"webpack-dev": "webpack --config webpackdev.config.ts",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"eslintConfig": {
+		"extends": "react-app"
+	},
+	"dependencies": {
+		"@types/uuid": "^9.0.7",
+		"axios": "^1.6.7",
+		"bcrypt": "^5.1.1",
+		"cors": "^2.8.5",
+		"dotenv": "^16.3.1",
+		"express": "^4.18.2",
+		"jsonwebtoken": "^9.0.2",
+		"multer": "^1.4.5-lts.1",
+		"nodemon": "^3.0.2",
+		"pg": "^8.11.3",
+		"pg-hstore": "^2.3.4",
+		"reflect-metadata": "^0.2.1",
+		"sequelize": "^6.35.2",
+		"typeorm": "^0.3.19",
+		"uuid": "^9.0.1"
+	},
+	"devDependencies": {
+		"@types/express": "^4.17.21",
+		"@typescript-eslint/eslint-plugin": ">=6.0.0",
+		"@typescript-eslint/parser": ">=6.0.0",
+		"eslint": ">=8.0.0",
+		"eslint-config-xo": "^0.43.1",
+		"eslint-config-xo-typescript": "^1.0.1",
+		"eslint-plugin-react": "^7.33.2",
+		"prettier": "^3.2.1",
+		"ts-loader": "^9.5.1",
+		"ts-node-dev": "^2.0.0",
+		"typescript": ">=4.7",
+		"webpack": "^5.90.3",
+		"webpack-cli": "^5.1.4",
+		"webpack-node-externals": "^3.0.0"
+	}
+}
