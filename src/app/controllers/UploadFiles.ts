@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import e, { Request, Response } from "express";
 import { AppDataSource } from "../../database/data-source";
 import { Cliente } from "../entity/Clientes";
 import { DetalheConsumo } from "../entity/DetalheConsumo";
@@ -20,6 +20,12 @@ export async function uploadAndProcessFaturas(
 		}
 
 		const extractedData = await extractDataFromPdf(file.buffer);
+
+		console.log("Dados extraídos:", extractedData);
+		const detalhes = extractedData[0].detalhes;
+
+		console.log("Detalhes:", detalhes);
+
 		const clienteRepository = AppDataSource.getRepository(Cliente);
 		const faturaRepository = AppDataSource.getRepository(Fatura);
 		const detalheConsumoRepository =
@@ -32,17 +38,11 @@ export async function uploadAndProcessFaturas(
 		}
 
 		for (const data of extractedData) {
-			console.log("Dados extraídos para processamento:", data);
-
-			let cliente = await clienteRepository.findOneBy({
+			
+			const cliente = clienteRepository.create({
 				numero_cliente: data.numeroCliente
 			});
-			if (!cliente) {
-				cliente = clienteRepository.create({
-					numero_cliente: data.numeroCliente
-				});
-				await clienteRepository.save(cliente);
-			}
+			await clienteRepository.save(cliente);
 
 			const fatura = faturaRepository.create({
 				cliente: cliente,
@@ -62,7 +62,7 @@ export async function uploadAndProcessFaturas(
 				const detalhe = detalheConsumoRepository.create({
 					fatura: fatura,
 					tipo_consumo: item.tipo,
-					quantidade_kwh: item.quantidadeKwh || 0, // Assegura que undefined se torne 0
+					quantidade_kwh: item.quantidadeKwh || 0,
 					valor: item.valor
 				});
 				await detalheConsumoRepository.save(detalhe);

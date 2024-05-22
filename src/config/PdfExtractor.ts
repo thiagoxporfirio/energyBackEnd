@@ -1,114 +1,74 @@
-import pdf from "pdf-parse";
+import pdf from 'pdf-parse';
+
 
 export function parseReferenceDate(mesReferencia: string): Date {
-	if (!mesReferencia) {
-		throw new Error("Mês de referência não fornecido ou inválido.");
-	}
-	const monthNames = [
-		"JAN",
-		"FEV",
-		"MAR",
-		"ABR",
-		"MAI",
-		"JUN",
-		"JUL",
-		"AGO",
-		"SET",
-		"OUT",
-		"NOV",
-		"DEZ"
-	];
-	const parts = mesReferencia.split("/");
-	const month = monthNames.indexOf(parts[0]);
-	const year = parseInt(parts[1], 10);
+    const monthNames = {
+        "JAN": 0, "FEV": 1, "MAR": 2, "ABR": 3, "MAI": 4, "JUN": 5,
+        "JUL": 6, "AGO": 7, "SET": 8, "OUT": 9, "NOV": 10, "DEZ": 11
+    };
 
-	return new Date(year, month, 1);
+    const [mes, ano] = mesReferencia.split("/");
+    const date = new Date(parseInt(ano), monthNames[mes], 1);
+    return date;
 }
 
-export async function extractDataFromPdf(dataBuffer): Promise<any> {
-	const data = await pdf(dataBuffer);
-	const text = data.text.replace(/\s+/g, ' ');
+export async function extractDataFromPdf(dataBuffer) {
+    const data = await pdf(dataBuffer);
+    const text = data.text;
 
-	console.log("Texto extraído:", text);
+    console.log("Texto extraído:", text);
 
-	const numeroClienteRegex = /Nº DO CLIENTE[\s:]*([0-9]+)/;
-	const numeroClienteMatch = text.match(numeroClienteRegex);
-	const numeroCliente = numeroClienteMatch ? numeroClienteMatch[1] : undefined;
+    const numeroClienteRegex = /Nº DA INSTALAÇÃO\s+(\d+)/;
+    const numeroClienteMatch = text.match(numeroClienteRegex);
+    const numeroCliente = numeroClienteMatch ? numeroClienteMatch[1] : 'Número não encontrado';
 
-	const dataEmissaoMatch = text.match(/Data de emissão: (\d{2}\/\d{2}\/\d{4})/);
-	let mesReferencia;
+    const dataEmissaoRegex = /Data de emissão: (\d{2}\/\d{2}\/\d{4})/;
+    const dataEmissaoMatch = text.match(dataEmissaoRegex);
+    let mesReferencia = 'Data não encontrada';
+    if (dataEmissaoMatch) {
+        const dataEmissaoParts = dataEmissaoMatch[1].split('/');
+        const mes = parseInt(dataEmissaoParts[1], 10);
+        const ano = dataEmissaoParts[2];
+        const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+        mesReferencia = `${meses[mes - 1]}/${ano}`;
+    }
 
-	if (dataEmissaoMatch) {
-		const dataEmissao = new Date(dataEmissaoMatch[1]);
-		const monthNames = [
-			"JAN",
-			"FEV",
-			"MAR",
-			"ABR",
-			"MAI",
-			"JUN",
-			"JUL",
-			"AGO",
-			"SET",
-			"OUT",
-			"NOV",
-			"DEZ"
-		];
-		mesReferencia = `${monthNames[dataEmissao.getMonth()]}/${dataEmissao.getFullYear()}`;
-	}
+    const detalhes = [];
+    const consumoPatterns = [
+        { tipo: "Energia Elétrica", regex: /Energia Elétrica\s+kWh\s+(\d+)\s+([\d,\.]+)/ },
+        { tipo: "Energia SCEE ISENTA", regex: /Energia SCEE ISENTA\s+kWh\s+(\d+)\s+([\d,\.]+)/ },
+        { tipo: "Energia compensada GD I", regex: /Energia compensada GD I\s+kWh\s+(\d+)\s+([\d,\.]+)/ },
+        { tipo: "Contrib Ilum Publica Municipal", regex: /Contrib Ilum Publica Municipal\s+([\d,\.]+)/ }
+    ];
 
-	// Detalhes de consumo
-	const detalhes = [];
+    consumoPatterns.forEach(pattern => {
+        const matches = text.match(pattern.regex);
+        if (matches) {
+            if (pattern.tipo === "Contrib Ilum Publica Municipal") {
+                detalhes.push({
+                    tipo: pattern.tipo,
+                    quantidadeKwh: 0,
+                    valor: parseFloat(matches[1].replace(",", "."))
+                });
+            } else {
+                detalhes.push({
+                    tipo: pattern.tipo,
+                    quantidadeKwh: parseFloat(matches[1].replace(",", ".")),
+                    valor: parseFloat(matches[2].replace(",", "."))
+                });
+            }
+        } else {
+            console.log(`Dados não encontrados para o tipo: ${pattern.tipo}`);
+        }
+    });
 
-	// Energia Elétrica
-	const energiaEletricaRegex = /Energia Elétrica\s+kWh\s+(\d+)\s+([\d,.]+)/;
-	let matches = text.match(energiaEletricaRegex);
-	if (matches) {
-		detalhes.push({
-			tipo: "Energia Elétrica",
-			quantidadeKwh: parseFloat(matches[1].replace(",", ".")),
-			valor: parseFloat(matches[2].replace(",", "."))
-		});
-	}
+    const extractedData = [{
+        numeroCliente,
+        mesReferencia,
+        detalhes: [...detalhes]
+    }];
+    
+    console.log("Dados extraídos:", extractedData);
 
-	// Energia SCEEE ISENTA
-	const energiaSCEEERegex = /Energia SCEEE ISENTA\s+kWh\s+(\d+)\s+([\d,.]+)/;
-	matches = text.match(energiaSCEEERegex);
-	if (matches) {
-		detalhes.push({
-			tipo: "Energia SCEEE ISENTA",
-			quantidadeKwh: parseFloat(matches[1].replace(",", ".")),
-			valor: parseFloat(matches[2].replace(",", "."))
-		});
-	}
-
-	// Energia compensada GD I
-	const energiaGDRegex = /Energia compensada GD I\s+kWh\s+(\d+)\s+([\d,.]+)/;
-	matches = text.match(energiaGDRegex);
-	if (matches) {
-		detalhes.push({
-			tipo: "Energia compensada GD I",
-			quantidadeKwh: parseFloat(matches[1].replace(",", ".")),
-			valor: parseFloat(matches[2].replace(",", "."))
-		});
-	}
-
-	// Contrib Ilum Publica Municipal
-	const contribIlumRegex = /Contrib Ilum Publica Municipal\s+([\d,.]+)/;
-	matches = text.match(contribIlumRegex);
-	if (matches) {
-		detalhes.push({
-			tipo: "Contrib Ilum Publica Municipal",
-			quantidadeKwh: 0, // Não aplica quantidade para este tipo
-			valor: parseFloat(matches[1].replace(",", "."))
-		});
-	}
-
-	return [
-		{
-			numeroCliente,
-			mesReferencia,
-			detalhes: [...detalhes]
-		}
-	];
+    return extractedData;
 }
