@@ -21,7 +21,6 @@ export async function uploadAndProcessFaturas(
 
 		const extractedData = await extractDataFromPdf(file.buffer);
 
-		console.log("Dados extraídos:", extractedData);
 		const detalhes = extractedData[0].detalhes;
 
 		console.log("Detalhes:", detalhes);
@@ -38,11 +37,28 @@ export async function uploadAndProcessFaturas(
 		}
 
 		for (const data of extractedData) {
-			
-			const cliente = clienteRepository.create({
+			let cliente = await clienteRepository.findOneBy({
 				numero_cliente: data.numeroCliente
 			});
-			await clienteRepository.save(cliente);
+			if (!cliente) {
+				cliente = clienteRepository.create({
+					numero_cliente: data.numeroCliente
+				});
+				await clienteRepository.save(cliente);
+			}
+
+			const faturaExistente = await faturaRepository.findOne({
+				where: {
+					cliente: cliente,
+					mes_referencia: data.mesReferencia
+				}
+			});
+
+			if (faturaExistente) {
+				return response.status(400).json({
+					message: `Fatura para o cliente ${data.numeroCliente} e mês de referência ${data.mesReferencia} já existe.`
+				});
+			}
 
 			const fatura = faturaRepository.create({
 				cliente: cliente,
@@ -55,7 +71,6 @@ export async function uploadAndProcessFaturas(
 				data_emissao: parseReferenceDate(data.mesReferencia)
 			});
 
-			console.log("Fatura a ser salva:", fatura);
 			await faturaRepository.save(fatura);
 
 			for (const item of data.detalhes) {
@@ -77,3 +92,4 @@ export async function uploadAndProcessFaturas(
 		return response.status(500).send("Internal Server Error");
 	}
 }
+
