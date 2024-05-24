@@ -3,7 +3,7 @@ import { health } from "./app/controllers/health";
 import multer from 'multer';
 import path from 'path';
 import express from 'express';
-import { getDashboardData, uploadAndProcessFaturas } from "./app/controllers/UploadFiles";
+import { getDashboardData, getPdfUrlByCliente, uploadAndProcessFaturas } from "./app/controllers/UploadFiles";
 
 export const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -19,6 +19,7 @@ router.get("/", (request, response) => response.json({ message: "Hello World" })
 // ======================
 router.post("/upload-faturas", upload.single('file'), uploadAndProcessFaturas);
 router.get('/dashboard', getDashboardData);
+router.get('/fatura-url/:numeroCliente', getPdfUrlByCliente);
 
 const uploadsPath = path.join(__dirname, 'uploads');
 router.use('/uploads', express.static(uploadsPath));

@@ -183,3 +183,40 @@ export async function getDashboardData(request: Request, response: Response) {
 		return response.status(500).send("Internal Server Error");
 	}
 }
+
+export const getPdfUrlByCliente = async (
+	request: Request,
+	response: Response
+) => {
+	try {
+		const { numeroCliente } = request.params;
+		const clienteRepository = AppDataSource.getRepository(Cliente);
+		const faturaRepository = AppDataSource.getRepository(Fatura);
+
+		const cliente = await clienteRepository.findOneBy({
+			numero_cliente: numeroCliente
+		});
+
+		if (!cliente) {
+			return response.status(404).json({ message: "Cliente não encontrado" });
+		}
+
+		const faturas = await faturaRepository.find({
+			where: { cliente: cliente },
+			order: { data_emissao: "DESC" }
+		});
+
+		if (!faturas.length) {
+			return response
+				.status(404)
+				.json({ message: "Nenhuma fatura encontrada para este cliente" });
+		}
+
+		const pdfUrls = faturas.map(fatura => fatura.url_pdf);
+
+		return response.status(200).json({ urls: pdfUrls });
+	} catch (error) {
+		console.error("Erro ao obter URLs dos PDFs:", error);
+		return response.status(500).send("Internal Server Error");
+	}
+};
