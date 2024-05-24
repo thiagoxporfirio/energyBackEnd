@@ -39,8 +39,10 @@ AppDataSource.initialize()
 		const PORT = process.env.APP_PORT;
 
 		app.use(express.json());
-		app.use(cors());
+		app.use(cors());		
 		app.use(basePath, router);
+		
+
 
 		const server = app.listen(PORT, () => {
 			console.clear()

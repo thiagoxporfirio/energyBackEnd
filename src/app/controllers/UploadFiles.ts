@@ -21,17 +21,29 @@ export async function uploadAndProcessFaturas(
 			return response.status(400).send("Nenhum arquivo enviado.");
 		}
 
+		const pdfFileName = `${Date.now()}_${file.originalname}`;
+		const pdfUrl = `http://localhost:3333/uploads/${pdfFileName}`;
+
+		const faturaRepository = AppDataSource.getRepository(Fatura);
+		const faturaExistente = await faturaRepository.findOne({
+			where: {
+				url_pdf: pdfUrl
+			}
+		});
+
+		if (faturaExistente) {
+			return response.status(400).json({
+				message: "Fatura já existe com esta URL."
+			});
+		}
+
 		// Save PDF file to the server
 		const pdfDirectory = path.join(__dirname, "../../uploads");
 		if (!fs.existsSync(pdfDirectory)) {
 			fs.mkdirSync(pdfDirectory, { recursive: true });
 		}
-		const pdfFileName = `${Date.now()}_${file.originalname}`;
 		const pdfPath = path.join(pdfDirectory, pdfFileName);
 		fs.writeFileSync(pdfPath, file.buffer);
-
-		// Generate URL for the PDF
-		const pdfUrl = `http://localhost:3333/uploads/${pdfFileName}`;
 
 		const extractedData = await extractDataFromPdf(file.buffer);
 
@@ -40,7 +52,6 @@ export async function uploadAndProcessFaturas(
 		console.log("Detalhes:", detalhes);
 
 		const clienteRepository = AppDataSource.getRepository(Cliente);
-		const faturaRepository = AppDataSource.getRepository(Fatura);
 		const detalheConsumoRepository =
 			AppDataSource.getRepository(DetalheConsumo);
 
