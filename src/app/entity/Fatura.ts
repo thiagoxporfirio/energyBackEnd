@@ -28,4 +28,7 @@ export class Fatura {
 
     @OneToMany(() => DetalheConsumo, detalhe => detalhe.fatura)
     detalhes_consumo: DetalheConsumo[];
+
+    @Column({ nullable: true })
+    url_pdf: string;
 }
