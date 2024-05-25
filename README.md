@@ -77,5 +77,6 @@ A API suporta os seguintes endpoints:
 
 (Informações sobre como executar os testes, caso haja.)
 
-## Contribuição
+## Demonstração
+![Esquema do Banco de Dados](src/images/banco.png)
 
