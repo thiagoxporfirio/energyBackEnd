@@ -79,4 +79,3 @@ A API suporta os seguintes endpoints:
 
 ## Contribuição
 
-(Se você deseja permitir contribuições para o projeto, descreva aqui como os interessados podem contribuir.)
